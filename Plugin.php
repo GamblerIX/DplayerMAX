@@ -6,18 +6,12 @@ if (!defined('__TYPECHO_ROOT_DIR__')) exit;
  *
  * @package DPlayerMAX
  * @author GamblerIX
- * @version 1.1.1
+ * @version 1.1.2
  * @link https://github.com/GamblerIX/DPlayerMAX
  */
 class DPlayerMAX_Plugin implements Typecho_Plugin_Interface
 {
 
-    /**
-     * 激活插件方法,如果激活失败,直接抛出异常
-     *
-     * @access public
-     * @return void
-     */
     public static function activate()
     {
         Typecho_Plugin::factory('Widget_Abstract_Contents')->contentEx = ['DPlayerMAX_Plugin', 'replacePlayer'];
@@ -28,20 +22,10 @@ class DPlayerMAX_Plugin implements Typecho_Plugin_Interface
         Typecho_Plugin::factory('admin/write-page.php')->bottom = ['DPlayerMAX_Plugin', 'addEditorButton'];
     }
 
-    /**
-     * 禁用插件方法,如果禁用失败,直接抛出异常
-     *
-     * @static
-     * @access public
-     * @return void
-     */
     public static function deactivate()
     {
     }
 
-    /**
-     * 插入顶部代码
-     */
     public static function playerHeader()
     {
         $url = Helper::options()->pluginUrl . '/DPlayerMAX';
@@ -50,10 +34,6 @@ class DPlayerMAX_Plugin implements Typecho_Plugin_Interface
 EOF;
     }
 
-    /**
-     * 插入底部代码
-     * @throws Typecho_Exception
-     */
     public static function playerFooter()
     {
         $url = Helper::options()->pluginUrl . '/DPlayerMAX';
@@ -69,60 +49,31 @@ EOF;
 EOF;
     }
 
-    /**
-     * 内容标签替换
-     *
-     * @param $text
-     * @param $widget
-     * @param $last
-     * @return string
-     */
     public static function replacePlayer($text, $widget, $last)
     {
         $text = empty($last) ? $text : $last;
         if ($widget instanceof Widget_Archive) {
             $pattern = self::get_shortcode_regex(['dplayer']);
-            $text = preg_replace_callback("/$pattern/", ['DPlayer_Plugin', 'parseCallback'], $text);
+            $text = preg_replace_callback("/$pattern/", [__CLASS__, 'parseCallback'], $text);
         }
         return $text;
     }
 
-    /**
-     * 回调解析
-     * @param $matches
-     * @return string
-     * @throws Typecho_Exception
-     */
     public static function parseCallback($matches)
     {
-        /*
-            $mathes array
-            * 1 - An extra [ to allow for escaping shortcodes with double [[]]
-             * 2 - The shortcode name
-             * 3 - The shortcode argument list
-             * 4 - The self closing /
-             * 5 - The content of a shortcode when it wraps some content.
-             * 6 - An extra ] to allow for escaping shortcodes with double [[]]
-         */
-        // allow [[player]] syntax for escaping the tag
         if ($matches[1] == '[' && $matches[6] == ']') {
             return substr($matches[0], 1, -1);
         }
-        //还原转义后的html
-        //[dplayer title=&quot;Test Abc&quot; artist=&quot;haha&quot; id=&quot;1234543&quot;/]
         $tag = htmlspecialchars_decode($matches[3]);
-        //[dplayer]标签的属性，类型为array
         $attrs = self::shortcode_parse_atts($tag);
-        return DPlayer_Plugin::parsePlayer($attrs);
+        return self::parsePlayer($attrs);
     }
 
     public static function parsePlayer($attrs)
     {
-        //播放器设置
         $theme = Typecho_Widget::widget('Widget_Options')->plugin('DPlayerMAX')->theme ?: '#FADFA3';
         $api = Typecho_Widget::widget('Widget_Options')->plugin('DPlayerMAX')->api;
 
-        //播放器属性
         $config = [
             'live' => false,
             'autoplay' => isset($attrs['autoplay']) && $attrs['autoplay'] == 'true',
@@ -191,22 +142,6 @@ EOF;
     {
     }
 
-    /**
-     * Retrieve all attributes from the shortcodes tag.
-     *
-     * The attributes list has the attribute name as the key and the value of the
-     * attribute as the value in the key/value pair. This allows for easier
-     * retrieval of the attributes, since all attributes have to be known.
-     *
-     * @link https://github.com/WordPress/WordPress/blob/master/wp-includes/shortcodes.php
-     * @since 2.5.0
-     *
-     * @param string $text
-     * @return array|string List of attribute values.
-     *                      Returns empty array if trim( $text ) == '""'.
-     *                      Returns empty string if trim( $text ) == ''.
-     *                      All other matches are checked for not empty().
-     */
     private static function shortcode_parse_atts($text)
     {
         $atts = array();
@@ -226,7 +161,6 @@ EOF;
                     $atts[] = stripcslashes($m[8]);
             }
 
-            // Reject any unclosed HTML elements
             foreach ($atts as &$value) {
                 if (false !== strpos($value, '<')) {
                     if (1 !== preg_match('/^[^<]*+(?:<[^>]*+>[^<]*+)*+$/', $value)) {
@@ -240,62 +174,38 @@ EOF;
         return $atts;
     }
 
-    /**
-     * Retrieve the shortcode regular expression for searching.
-     *
-     * The regular expression combines the shortcode tags in the regular expression
-     * in a regex class.
-     *
-     * The regular expression contains 6 different sub matches to help with parsing.
-     *
-     * 1 - An extra [ to allow for escaping shortcodes with double [[]]
-     * 2 - The shortcode name
-     * 3 - The shortcode argument list
-     * 4 - The self closing /
-     * 5 - The content of a shortcode when it wraps some content.
-     * 6 - An extra ] to allow for escaping shortcodes with double [[]]
-     *
-     * @link https://github.com/WordPress/WordPress/blob/master/wp-includes/shortcodes.php
-     * @since 2.5.0
-     *
-     *
-     * @param array $tagnames List of shortcodes to find. Optional. Defaults to all registered shortcodes.
-     * @return string The shortcode search regular expression
-     */
     private static function get_shortcode_regex($tagnames = null)
     {
         $tagregexp = join('|', array_map('preg_quote', $tagnames));
 
-        // WARNING! Do not change this regex without changing do_shortcode_tag() and strip_shortcode_tag()
-        // Also, see shortcode_unautop() and shortcode.js.
         return
-            '\\['                              // Opening bracket
-            . '(\\[?)'                           // 1: Optional second opening bracket for escaping shortcodes: [[tag]]
-            . "($tagregexp)"                     // 2: Shortcode name
-            . '(?![\\w-])'                       // Not followed by word character or hyphen
-            . '('                                // 3: Unroll the loop: Inside the opening shortcode tag
-            . '[^\\]\\/]*'                   // Not a closing bracket or forward slash
+            '\\['
+            . '(\\[?)'
+            . "($tagregexp)"
+            . '(?![\\w-])'
+            . '('
+            . '[^\\]\\/]*'
             . '(?:'
-            . '\\/(?!\\])'               // A forward slash not followed by a closing bracket
-            . '[^\\]\\/]*'               // Not a closing bracket or forward slash
+            . '\\/(?!\\])'
+            . '[^\\]\\/]*'
             . ')*?'
             . ')'
             . '(?:'
-            . '(\\/)'                        // 4: Self closing tag ...
-            . '\\]'                          // ... and closing bracket
+            . '(\\/)'
+            . '\\]'
             . '|'
-            . '\\]'                          // Closing bracket
+            . '\\]'
             . '(?:'
-            . '('                        // 5: Unroll the loop: Optionally, anything between the opening and closing shortcode tags
-            . '[^\\[]*+'             // Not an opening bracket
+            . '('
+            . '[^\\[]*+'
             . '(?:'
-            . '\\[(?!\\/\\2\\])' // An opening bracket not followed by the closing shortcode tag
-            . '[^\\[]*+'         // Not an opening bracket
+            . '\\[(?!\\/\\2\\])'
+            . '[^\\[]*+'
             . ')*+'
             . ')'
-            . '\\[\\/\\2\\]'             // Closing shortcode tag
+            . '\\[\\/\\2\\]'
             . ')?'
             . ')'
-            . '(\\]?)';                          // 6: Optional second closing brocket for escaping shortcodes: [[tag]]
+            . '(\\]?)';
     }
 }
