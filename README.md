@@ -2,17 +2,6 @@
 
 DPlayerMAX 是一个为 Typecho 设计的视频播放器插件，基于 DPlayer 播放器核心，支持多种视频格式和弹幕功能。
 
-## 主要特性
-
-- 🎬 支持多种视频格式（MP4、WebM、Ogg 等）
-- 💬 支持弹幕功能
-- 📝 支持字幕显示
-- 🎨 可自定义主题颜色
-- 📱 响应式设计，支持移动端
-- 🔌 支持 HLS (m3u8) 格式
-- 🎞️ 支持 FLV 格式
-- 🚀 本地资源加载，无需依赖外部 CDN
-
 ## 安装说明
 
 ### 下载安装
@@ -24,9 +13,18 @@ DPlayerMAX 是一个为 Typecho 设计的视频播放器插件，基于 DPlayer 
 
 **重要：** 插件目录必须命名为 `DPlayerMAX`，否则资源文件将无法正确加载。
 
-## 配置选项
+## 主要特性
 
-在插件配置页面，您可以设置以下选项：
+- 🎬 支持多种视频格式（MP4、WebM、Ogg 等）
+- 💬 支持弹幕功能
+- 📝 支持字幕显示
+- 🎨 可自定义主题颜色
+- 📱 响应式设计，支持移动端
+- 🔌 支持 HLS (m3u8) 格式
+- 🎞️ 支持 FLV 格式
+- 🚀 本地资源加载，无需依赖外部 CDN
+
+## 配置选项
 
 ### 默认主题颜色
 设置播放器的默认主题颜色，例如：`#FADFA3`、`#75c`、`red`、`blue` 等。
@@ -51,24 +49,6 @@ DPlayerMAX 是一个为 Typecho 设计的视频播放器插件，基于 DPlayer 
 ```
 [dplayer url="视频地址" pic="封面图地址" /]
 ```
-
-### 可用参数
-
-| 参数 | 说明 | 默认值 |
-|------|------|--------|
-| `url` | 视频文件地址（必填） | - |
-| `pic` | 视频封面图片地址 | - |
-| `type` | 视频类型（auto/hls/flv） | auto |
-| `theme` | 播放器主题颜色 | 插件配置的默认颜色 |
-| `autoplay` | 自动播放（true/false） | false |
-| `loop` | 循环播放（true/false） | false |
-| `screenshot` | 允许截图（true/false） | false |
-| `danmu` | 开启弹幕（true/false） | false |
-| `lang` | 语言（zh-cn/zh-tw/en） | zh-cn |
-| `volume` | 默认音量（0-1） | 0.7 |
-| `subtitle` | 开启字幕（true/false） | false |
-| `subtitleurl` | 字幕文件地址 | - |
-| `subtitletype` | 字幕类型（webvtt/srt） | webvtt |
 
 ### 使用示例
 
@@ -97,6 +77,24 @@ DPlayerMAX 是一个为 Typecho 设计的视频播放器插件，基于 DPlayer 
 [dplayer url="https://example.com/video.mp4" subtitle="true" subtitleurl="https://example.com/subtitle.vtt" /]
 ```
 
+### 可用参数
+
+| 参数 | 说明 | 默认值 |
+|------|------|--------|
+| `url` | 视频文件地址（必填） | - |
+| `pic` | 视频封面图片地址 | - |
+| `type` | 视频类型（auto/hls/flv） | auto |
+| `theme` | 播放器主题颜色 | 插件配置的默认颜色 |
+| `autoplay` | 自动播放（true/false） | false |
+| `loop` | 循环播放（true/false） | false |
+| `screenshot` | 允许截图（true/false） | false |
+| `danmu` | 开启弹幕（true/false） | false |
+| `lang` | 语言（zh-cn/zh-tw/en） | zh-cn |
+| `volume` | 默认音量（0-1） | 0.7 |
+| `subtitle` | 开启字幕（true/false） | false |
+| `subtitleurl` | 字幕文件地址 | - |
+| `subtitletype` | 字幕类型（webvtt/srt） | webvtt |
+
 ## 从旧版 DPlayer 迁移
 
 如果您之前使用的是 DPlayer 插件，请按以下步骤迁移：
@@ -119,8 +117,9 @@ DPlayerMAX 是一个为 Typecho 设计的视频播放器插件，基于 DPlayer 
 ## 版权信息
 
 - **作者**：[GamblerIX](https://github.com/GamblerIX)
-- **仓库**：[https://github.com/GamblerIX/DPlayerMAX](https://github.com/GamblerIX/DPlayerMAX)
+- **仓库**：[DPlayerMAX](https://github.com/GamblerIX/DPlayerMAX)
 - **许可证**：MIT LICENSE
+- **鸣谢**：[DPlayer And Its Issue](https://github.com/MoePlayer/DPlayer-Typecho/issues/40)
 
 ## 技术支持
 
