@@ -1,0 +1,84 @@
+# DPlayerMAX v1.1.3 更新日志
+
+发布日期: 2024-11-19
+
+## 新增功能
+
+### 自动更新系统
+- ✨ 新增插件自动更新功能，支持从GitHub仓库自动检测和下载更新
+- 🔍 版本检查：自动对比本地版本与GitHub远程版本
+- 📥 一键更新：在插件配置页面点击按钮即可完成更新
+- 🔄 智能备份：更新前自动备份当前版本，失败时自动恢复
+- 🛡️ 安全验证：包含权限检查、路径验证和来源验证
+- 📊 状态反馈：实时显示更新进度和状态信息
+- ⚙️ 可配置：支持启用/禁用自动更新检查
+
+## 技术改进
+
+### 版本检查模块
+- 实现 `getRemoteVersion()` 方法：从GitHub获取远程VERSION文件
+- 实现 `getLocalVersion()` 方法：读取本地VERSION文件
+- 实现 `compareVersion()` 方法：使用语义化版本号比较
+- 实现 `checkUpdate()` 方法：返回完整的更新信息
+
+### 更新执行模块
+- 实现 `downloadUpdate()` 方法：从GitHub下载更新包
+- 实现 `extractUpdate()` 方法：解压ZIP文件
+- 实现 `installUpdate()` 方法：安装更新文件
+- 实现 `performUpdate()` 方法：协调完整更新流程
+
+### 备份恢复模块
+- 实现 `backupPlugin()` 方法：创建带时间戳的备份
+- 实现 `restorePlugin()` 方法：从备份恢复插件
+- 实现 `cleanupBackup()` 方法：清理临时文件
+- 实现 `recursiveCopy()` 辅助方法：递归复制文件
+
+### 安全增强
+- 实现 `checkPermission()` 方法：验证管理员权限
+- 实现 `validatePath()` 方法：防止路径遍历攻击
+- 实现 `validateDownloadUrl()` 方法：验证下载来源
+- 添加 `logError()` 方法：记录详细错误日志
+
+### 用户界面
+- 在配置页面添加自动更新开关
+- 实现 `renderUpdateSection()` 方法：显示版本信息和更新按钮
+- 创建 `assets/update.js`：处理AJAX更新请求
+- 创建 `Action.php`：处理后端更新请求
+
+## 错误处理
+- 网络错误：友好提示并建议检查网络连接
+- 文件系统错误：提示检查目录权限和磁盘空间
+- ZIP处理错误：自动清理损坏文件并提示重试
+- 更新失败：自动从备份恢复原版本
+
+## 兼容性
+- PHP 5.6+ 支持
+- Typecho 1.0+ 支持
+- 需要 ZipArchive 扩展
+- 需要 file_get_contents 或 cURL 支持
+
+## 文件变更
+- 新增: `Action.php` - AJAX请求处理
+- 新增: `assets/update.js` - 前端更新交互
+- 修改: `Plugin.php` - 添加更新功能模块
+- 修改: `README.md` - 添加自动更新说明
+- 新增: `docs/Changelog/v1.1.3.log` - 本更新日志
+
+## 已知问题
+- 更新过程中需要插件目录具有写入权限
+- 某些服务器环境可能限制外部HTTP请求
+- 大文件下载可能受到PHP超时限制影响
+
+## 升级说明
+从 v1.1.2 升级到 v1.1.3：
+1. 启用自动更新功能后，访问插件配置页面
+2. 系统会自动检测到新版本
+3. 点击"立即更新"按钮完成升级
+4. 或手动下载并替换插件文件
+
+## 致谢
+感谢所有为本项目提供反馈和建议的用户。
+
+---
+
+**完整更新内容请访问**: https://github.com/GamblerIX/DPlayerMAX/docs/Changelog/v1.1.3.log
