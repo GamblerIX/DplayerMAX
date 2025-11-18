@@ -40,10 +40,12 @@ EOF;
     public static function playerFooter()
     {
         $url = Helper::options()->pluginUrl . '/DPlayerMAX';
-        if (Typecho_Widget::widget('Widget_Options')->plugin('DPlayerMAX')->hls) {
+        $config = Helper::options()->plugin('DPlayerMAX');
+        
+        if (isset($config->hls) && $config->hls) {
             echo "<script type=\"text/javascript\" src=\"$url/plugin/hls.min.js\"></script>\n";
         }
-        if (Typecho_Widget::widget('Widget_Options')->plugin('DPlayerMAX')->flv) {
+        if (isset($config->flv) && $config->flv) {
             echo "<script type=\"text/javascript\" src=\"$url/plugin/flv.min.js\"></script>\n";
         }
         echo <<<EOF
@@ -74,8 +76,9 @@ EOF;
 
     public static function parsePlayer($attrs)
     {
-        $theme = Typecho_Widget::widget('Widget_Options')->plugin('DPlayerMAX')->theme ?: '#FADFA3';
-        $api = Typecho_Widget::widget('Widget_Options')->plugin('DPlayerMAX')->api;
+        $config = Helper::options()->plugin('DPlayerMAX');
+        $theme = (isset($config->theme) && $config->theme) ? $config->theme : '#FADFA3';
+        $api = isset($config->api) ? $config->api : '';
 
         $config = [
             'live' => false,
@@ -771,7 +774,7 @@ EOF;
     private static function renderUpdateSection()
     {
         // 检查是否启用自动更新
-        $options = Typecho_Widget::widget('Widget_Options')->plugin('DPlayerMAX');
+        $options = Helper::options()->plugin('DPlayerMAX');
         if (isset($options->autoUpdate) && $options->autoUpdate == '0') {
             return;
         }
