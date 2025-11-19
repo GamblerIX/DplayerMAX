@@ -1,6 +1,4 @@
 <?php
-if (!defined('__TYPECHO_ROOT_DIR__')) exit;
-
 /**
  * DPlayerMAX 更新管理器
  * 
@@ -12,6 +10,59 @@ if (!defined('__TYPECHO_ROOT_DIR__')) exit;
  * @version 1.0.0
  * @link https://github.com/GamblerIX/DPlayerMAX
  */
+
+// 处理 HTTP 请求（当直接访问此文件时）
+if (isset($_GET['action']) && !defined('__TYPECHO_ROOT_DIR__')) {
+    // 设置响应头
+    header('Content-Type: application/json; charset=utf-8');
+    
+    // 定义 Typecho 根目录
+    define('__TYPECHO_ROOT_DIR__', dirname(dirname(dirname(dirname(__FILE__)))));
+    
+    // 加载 Typecho
+    require_once __TYPECHO_ROOT_DIR__ . '/config.inc.php';
+    
+    // 验证用户权限
+    session_start();
+    $user = Typecho_Widget::widget('Widget_User');
+    
+    if (!$user->hasLogin() || !$user->pass('administrator', true)) {
+        echo json_encode([
+            'success' => false,
+            'message' => '权限不足，只有管理员可以执行更新操作'
+        ], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+    
+    // 获取操作类型
+    $action = $_GET['action'];
+    
+    try {
+        if ($action === 'check') {
+            $result = DPlayerMAX_UpdateManager::checkUpdate();
+        } elseif ($action === 'perform') {
+            $result = DPlayerMAX_UpdateManager::performUpdate();
+        } else {
+            $result = [
+                'success' => false,
+                'message' => '无效的操作类型'
+            ];
+        }
+        
+        echo json_encode($result, JSON_UNESCAPED_UNICODE);
+        
+    } catch (Exception $e) {
+        echo json_encode([
+            'success' => false,
+            'message' => '操作失败: ' . $e->getMessage()
+        ], JSON_UNESCAPED_UNICODE);
+    }
+    exit;
+}
+
+// 如果不是 HTTP 请求，确保在 Typecho 环境中
+if (!defined('__TYPECHO_ROOT_DIR__')) exit;
+
 class DPlayerMAX_UpdateManager
 {
     /**

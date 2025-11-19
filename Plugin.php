@@ -20,9 +20,6 @@ class DPlayerMAX_Plugin implements Typecho_Plugin_Interface
         Typecho_Plugin::factory('admin/write-post.php')->bottom = array('DPlayerMAX_Plugin', 'addEditorButton');
         Typecho_Plugin::factory('admin/write-page.php')->bottom = array('DPlayerMAX_Plugin', 'addEditorButton');
         
-        // 注册更新路由
-        Helper::addRoute('dplayermax_update', '/dplayermax/update', 'DPlayerMAX_Action', 'action');
-        
         return _t('插件已激活，请进入设置页面进行配置');
     }
 
@@ -32,7 +29,7 @@ class DPlayerMAX_Plugin implements Typecho_Plugin_Interface
 
     public static function playerHeader()
     {
-        $url = Helper::options()->pluginUrl . '/DPlayerMAX';
+        $url = \Utils\Helper::options()->pluginUrl . '/DPlayerMAX';
         echo <<<EOF
 <link rel="stylesheet" type="text/css" href="$url/assets/DPlayer.min.css" />
 EOF;
@@ -40,8 +37,8 @@ EOF;
 
     public static function playerFooter()
     {
-        $url = Helper::options()->pluginUrl . '/DPlayerMAX';
-        $config = Helper::options()->plugin('DPlayerMAX');
+        $url = \Utils\Helper::options()->pluginUrl . '/DPlayerMAX';
+        $config = \Utils\Helper::options()->plugin('DPlayerMAX');
         
         if (isset($config->hls) && $config->hls) {
             echo "<script type=\"text/javascript\" src=\"$url/plugin/hls.min.js\"></script>\n";
@@ -77,7 +74,7 @@ EOF;
 
     public static function parsePlayer($attrs)
     {
-        $config = Helper::options()->plugin('DPlayerMAX');
+        $config = \Utils\Helper::options()->plugin('DPlayerMAX');
         $theme = (isset($config->theme) && $config->theme) ? $config->theme : '#FADFA3';
         $api = isset($config->api) ? $config->api : '';
 
@@ -125,7 +122,7 @@ EOF;
 
     public static function addEditorButton()
     {
-        $dir = Helper::options()->pluginUrl . '/DPlayerMAX/assets/editor.js';
+        $dir = \Utils\Helper::options()->pluginUrl . '/DPlayerMAX/assets/editor.js';
         echo "<script type=\"text/javascript\" src=\"{$dir}\"></script>";
     }
 
@@ -166,15 +163,6 @@ EOF;
             _t("开启后可解析 flv 格式视频")
         );
         $form->addInput($flv);
-        
-        $autoUpdate = new Typecho_Widget_Helper_Form_Element_Radio(
-            'autoUpdate',
-            array('0' => _t('禁用'), '1' => _t('启用')),
-            '1',
-            _t('自动检查更新'),
-            _t('启用后将在访问配置页面时自动检查GitHub上的新版本')
-        );
-        $form->addInput($autoUpdate);
 
         // 渲染更新状态组件
         echo self::renderUpdateStatusWidget();
@@ -260,20 +248,48 @@ EOF;
      */
     public static function checkUpdate()
     {
-        $updatedFile = __DIR__ . '/ext/Updated.php';
-        
-        if (!file_exists($updatedFile)) {
+        try {
+            // 确保 __TYPECHO_ROOT_DIR__ 常量已定义
+            if (!defined('__TYPECHO_ROOT_DIR__')) {
+                define('__TYPECHO_ROOT_DIR__', dirname(dirname(dirname(__DIR__))));
+            }
+            
+            $updatedFile = __DIR__ . '/ext/Updated.php';
+            
+            if (!file_exists($updatedFile)) {
+                return [
+                    'success' => false,
+                    'localVersion' => '1.1.3',
+                    'remoteVersion' => null,
+                    'hasUpdate' => false,
+                    'message' => '更新组件不存在，请重新安装插件'
+                ];
+            }
+            
+            require_once $updatedFile;
+            
+            if (!class_exists('DPlayerMAX_UpdateManager')) {
+                return [
+                    'success' => false,
+                    'localVersion' => '1.1.3',
+                    'remoteVersion' => null,
+                    'hasUpdate' => false,
+                    'message' => '更新管理器类不存在'
+                ];
+            }
+            
+            return DPlayerMAX_UpdateManager::checkUpdate();
+            
+        } catch (Exception $e) {
+            self::logError('检查更新失败: ' . $e->getMessage(), 'CHECK_UPDATE');
             return [
                 'success' => false,
                 'localVersion' => '1.1.3',
                 'remoteVersion' => null,
                 'hasUpdate' => false,
-                'message' => '更新组件不存在，请重新安装插件'
+                'message' => '检查更新时发生错误: ' . $e->getMessage()
             ];
         }
-        
-        require_once $updatedFile;
-        return DPlayerMAX_UpdateManager::checkUpdate();
     }
 
     /**
@@ -283,17 +299,39 @@ EOF;
      */
     public static function performUpdate()
     {
-        $updatedFile = __DIR__ . '/ext/Updated.php';
-        
-        if (!file_exists($updatedFile)) {
+        try {
+            // 确保 __TYPECHO_ROOT_DIR__ 常量已定义
+            if (!defined('__TYPECHO_ROOT_DIR__')) {
+                define('__TYPECHO_ROOT_DIR__', dirname(dirname(dirname(__DIR__))));
+            }
+            
+            $updatedFile = __DIR__ . '/ext/Updated.php';
+            
+            if (!file_exists($updatedFile)) {
+                return [
+                    'success' => false,
+                    'message' => '更新组件不存在，请重新安装插件'
+                ];
+            }
+            
+            require_once $updatedFile;
+            
+            if (!class_exists('DPlayerMAX_UpdateManager')) {
+                return [
+                    'success' => false,
+                    'message' => '更新管理器类不存在'
+                ];
+            }
+            
+            return DPlayerMAX_UpdateManager::performUpdate();
+            
+        } catch (Exception $e) {
+            self::logError('执行更新失败: ' . $e->getMessage(), 'PERFORM_UPDATE');
             return [
                 'success' => false,
-                'message' => '更新组件不存在，请重新安装插件'
+                'message' => '执行更新时发生错误: ' . $e->getMessage()
             ];
         }
-        
-        require_once $updatedFile;
-        return DPlayerMAX_UpdateManager::performUpdate();
     }
 
     /**
@@ -302,18 +340,17 @@ EOF;
      */
     private static function renderUpdateStatusWidget()
     {
-        // 获取初始状态（不执行实际的更新检查）
-        $updateInfo = self::checkUpdate();
+        // 设置初始状态（不执行实际的更新检查）
+        $updateInfo = [
+            'success' => true,
+            'localVersion' => '1.1.3',
+            'remoteVersion' => null,
+            'hasUpdate' => false,
+            'message' => '点击"检查更新"按钮来检查新版本'
+        ];
         
-        // 确定状态
+        // 设置初始状态为未检查
         $status = 'not-checked';
-        if (isset($updateInfo['hasUpdate']) && $updateInfo['hasUpdate']) {
-            $status = 'update-available';
-        } elseif (isset($updateInfo['success']) && $updateInfo['success']) {
-            $status = 'up-to-date';
-        } elseif (isset($updateInfo['success']) && !$updateInfo['success']) {
-            $status = 'error';
-        }
         
         // 渲染CSS样式
         $html = self::renderStyles();
@@ -536,7 +573,7 @@ CSS;
      */
     private static function renderJavaScript()
     {
-        $updateUrl = Helper::options()->rootUrl . '/dplayermax/update';
+        $updateUrl = Helper::options()->pluginUrl . '/DPlayerMAX/ext/Updated.php';
         
         return <<<JS
 <script>
@@ -571,18 +608,36 @@ CSS;
             checkBtn.textContent = '检查中...';
             statusSpan.innerHTML = '<span class="loading-spinner"></span>';
             
-            fetch('{$updateUrl}?do=update&action=check')
-                .then(function(response) { return response.json(); })
+            fetch('{$updateUrl}?action=check')
+                .then(function(response) {
+                    // 检查响应状态
+                    if (!response.ok) {
+                        throw new Error('HTTP ' + response.status + ': 请求失败');
+                    }
+                    
+                    // 检查内容类型
+                    var contentType = response.headers.get('content-type');
+                    if (!contentType || contentType.indexOf('application/json') === -1) {
+                        throw new Error('服务器返回了非JSON格式的响应，可能是权限不足或登录已过期');
+                    }
+                    
+                    return response.json();
+                })
                 .then(function(data) {
-                    statusSpan.textContent = '检查完成';
-                    setTimeout(function() {
-                        location.reload();
-                    }, 1000);
+                    if (data.success === false) {
+                        statusSpan.textContent = '✗ ' + data.message;
+                    } else {
+                        statusSpan.textContent = '✓ 检查完成';
+                        setTimeout(function() {
+                            location.reload();
+                        }, 1000);
+                    }
                 })
                 .catch(function(error) {
-                    statusSpan.textContent = '检查失败: ' + error.message;
+                    statusSpan.textContent = '✗ 检查失败: ' + error.message;
                     checkBtn.disabled = false;
                     checkBtn.textContent = '检查更新';
+                    console.error('更新检查错误:', error);
                 });
         }, 300));
     }
@@ -598,8 +653,21 @@ CSS;
             performBtn.textContent = '更新中...';
             statusSpan.innerHTML = '<span class="loading-spinner"></span> 正在下载更新包...';
             
-            fetch('{$updateUrl}?do=update&action=perform')
-                .then(function(response) { return response.json(); })
+            fetch('{$updateUrl}?action=perform')
+                .then(function(response) {
+                    // 检查响应状态
+                    if (!response.ok) {
+                        throw new Error('HTTP ' + response.status + ': 请求失败');
+                    }
+                    
+                    // 检查内容类型
+                    var contentType = response.headers.get('content-type');
+                    if (!contentType || contentType.indexOf('application/json') === -1) {
+                        throw new Error('服务器返回了非JSON格式的响应，可能是权限不足或登录已过期');
+                    }
+                    
+                    return response.json();
+                })
                 .then(function(data) {
                     if (data.success) {
                         statusSpan.textContent = '✓ ' + data.message;
@@ -616,6 +684,7 @@ CSS;
                     statusSpan.textContent = '✗ 更新失败: ' + error.message;
                     performBtn.disabled = false;
                     performBtn.textContent = '立即更新';
+                    console.error('更新执行错误:', error);
                 });
         });
     }
@@ -701,51 +770,4 @@ JS;
     }
 }
 
-/**
- * DPlayerMAX Action处理类
- * 处理AJAX更新请求
- */
-class DPlayerMAX_Action extends Typecho_Widget implements Widget_Interface_Do
-{
-    /**
-     * 执行动作
-     */
-    public function action()
-    {
-        // 验证用户权限，但不抛出异常
-        $user = $this->widget('Widget_User');
-        if (!$user->pass('administrator', true)) {
-            $this->response->throwJson([
-                'success' => false,
-                'message' => '权限不足',
-                'error' => '只有管理员可以执行更新操作'
-            ]);
-            return;
-        }
-        
-        $this->on($this->request->is('do=update'))->update();
-    }
 
-    /**
-     * 处理更新请求
-     */
-    public function update()
-    {
-        $action = $this->request->get('action', 'check');
-
-        if ($action === 'check') {
-            // 检查更新
-            $result = DPlayerMAX_Plugin::checkUpdate();
-            $this->response->throwJson($result);
-        } elseif ($action === 'perform') {
-            // 执行更新
-            $result = DPlayerMAX_Plugin::performUpdate();
-            $this->response->throwJson($result);
-        } else {
-            $this->response->throwJson([
-                'success' => false,
-                'message' => '无效的操作'
-            ]);
-        }
-    }
-}

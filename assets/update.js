@@ -32,6 +32,25 @@
         
         xhr.onload = function() {
             if (xhr.status === 200) {
+                // 检查响应内容类型
+                var contentType = xhr.getResponseHeader('Content-Type') || '';
+                
+                // 如果不是JSON格式，显示友好错误
+                if (contentType.indexOf('application/json') === -1) {
+                    var errorMsg = '服务器返回了非JSON格式的响应';
+                    
+                    // 检查是否是HTML页面
+                    if (xhr.responseText.indexOf('<!DOCTYPE') !== -1 || xhr.responseText.indexOf('<html') !== -1) {
+                        errorMsg = '服务器返回了HTML页面，可能是权限不足或登录已过期，请刷新页面后重试';
+                    }
+                    
+                    setStatus(errorMsg, 'error');
+                    updateBtn.disabled = false;
+                    updateBtn.textContent = '重试更新';
+                    console.error('响应内容:', xhr.responseText.substring(0, 200));
+                    return;
+                }
+                
                 try {
                     var response = JSON.parse(xhr.responseText);
                     
@@ -49,9 +68,11 @@
                         updateBtn.textContent = '重试更新';
                     }
                 } catch (e) {
-                    setStatus('解析响应失败', 'error');
+                    setStatus('解析JSON失败: ' + e.message + '，请查看控制台了解详情', 'error');
                     updateBtn.disabled = false;
                     updateBtn.textContent = '重试更新';
+                    console.error('JSON解析错误:', e);
+                    console.error('响应内容:', xhr.responseText.substring(0, 500));
                 }
             } else {
                 setStatus('请求失败，HTTP状态码: ' + xhr.status, 'error');
